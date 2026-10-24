@@ -17,7 +17,7 @@ Required:
   --credentials-path <INFISICAL_CREDENTIALS_PATH>   e.g. /pe-backend
 
 Optional:
-  --domain <INFISICAL_DOMAIN>   default: https://app.infisical.com
+  --domain <INFISICAL_DOMAIN>   default: https://secrets.overlens.com.br/api
   --env <INFISICAL_ENV>         default: dev
   --dry-run                     validate and print the configs (secret masked), change nothing
 
@@ -30,7 +30,7 @@ need_value() { [[ $# -ge 2 && -n "$2" ]] || { echo "Missing value for $1" >&2; u
 
 AGENT_ID=""
 INFISICAL_PROJECT_ID=""
-INFISICAL_DOMAIN="https://app.infisical.com"
+INFISICAL_DOMAIN="https://secrets.overlens.com.br/api"
 INFISICAL_ENV="dev"
 INFISICAL_UNIVERSAL_AUTH_CLIENT_ID=""
 INFISICAL_CREDENTIALS_PATH=""
@@ -105,6 +105,12 @@ rm -f "$WORK_DIR/current-env.json"
 
 # 3. mcp_config: the Notion server fetches its token from Infisical at startup.
 #    Note: `agent update --mcp-config-file` replaces the agent's whole mcp_config.
+#    Codex starts MCP servers with a filtered environment, so on Codex runtimes
+#    the Infisical variables must be forwarded explicitly via `env_vars`.
+RUNTIME_ID="$(multica agent get "$AGENT_ID" --output json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("runtime_id") or "")')"
+PROVIDER="$(multica runtime list --output json | python3 -c 'import json,sys; rid=sys.argv[1]; print(next((r.get("provider","") for r in json.load(sys.stdin) if r["id"]==rid), ""))' "$RUNTIME_ID")"
+export PROVIDER
+echo "Runtime provider: ${PROVIDER:-unknown}"
 python3 > "$WORK_DIR/config.json" <<'PY'
 import json, os, shlex
 cmd = (
@@ -115,7 +121,10 @@ cmd = (
     f' --path={shlex.quote(os.environ["INFISICAL_CREDENTIALS_PATH"])}'
     ' -- notion-mcp-server'
 )
-print(json.dumps({"mcpServers": {"notion": {"command": "sh", "args": ["-c", cmd]}}}))
+server = {"command": "sh", "args": ["-c", cmd]}
+if os.environ.get("PROVIDER") == "codex":
+    server["env_vars"] = ["INFISICAL_DOMAIN", "INFISICAL_UNIVERSAL_AUTH_CLIENT_ID", "INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET"]
+print(json.dumps({"mcpServers": {"notion": server}}))
 PY
 
 if (( DRY_RUN )); then
