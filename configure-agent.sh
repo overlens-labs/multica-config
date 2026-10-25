@@ -82,7 +82,8 @@ echo "[$(date '+%F %T')] Configuring agent $AGENT_ID (path $INFISICAL_CREDENTIAL
 # 1. Fail fast: the identity must log in and see NOTION_TOKEN at the given path.
 T="$(infisical login --method=universal-auth --silent --plain)" || true
 [[ -n "$T" ]] || { echo "Infisical universal-auth login failed" >&2; exit 1; }
-if ! infisical run --token="$T" --projectId="$INFISICAL_PROJECT_ID" --env="$INFISICAL_ENV" \
+# The token goes through the environment, never argv (argv is visible via `ps`).
+if ! INFISICAL_TOKEN="$T" infisical run --projectId="$INFISICAL_PROJECT_ID" --env="$INFISICAL_ENV" \
      --path="$INFISICAL_CREDENTIALS_PATH" --silent -- sh -c '[ -n "${NOTION_TOKEN:-}" ]'; then
   echo "NOTION_TOKEN not readable at $INFISICAL_CREDENTIALS_PATH ($INFISICAL_ENV)" >&2
   exit 1
@@ -114,8 +115,9 @@ echo "Runtime provider: ${PROVIDER:-unknown}"
 python3 > "$WORK_DIR/config.json" <<'PY'
 import json, os, shlex
 cmd = (
-    'T=$(infisical login --method=universal-auth --silent --plain) && [ -n "$T" ] && '
-    'exec infisical run --token="$T"'
+    'INFISICAL_TOKEN=$(infisical login --method=universal-auth --silent --plain) && '
+    '[ -n "$INFISICAL_TOKEN" ] && export INFISICAL_TOKEN && '
+    'exec infisical run'
     f' --projectId={shlex.quote(os.environ["INFISICAL_PROJECT_ID"])}'
     f' --env={shlex.quote(os.environ["INFISICAL_ENV"])}'
     f' --path={shlex.quote(os.environ["INFISICAL_CREDENTIALS_PATH"])}'
