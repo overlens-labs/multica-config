@@ -142,18 +142,13 @@ Como tudo, exceto a machine identity, vive no Infisical, só a rotação do clie
 
 Com `agents_credentials.isolate = false` (padrão, e o caso da Overlens), todo agente é `member` do projeto e lê `/<outro-agente>`. Com `isolate = true`, o agente vira `no-access` e recebe um *identity-specific privilege* que só lê `/<agent>/**`. Esse recurso exige uma edição do Infisical com *additional privileges*. Ligue só depois de validar numa identity de teste. A alternativa sem esse recurso é um projeto `agents-credentials-<agent>` por agente (não implementada).
 
-## 5. Verificação local (o que o PR checa)
+## 5. Verificação local e CI
 
 ```bash
-cd infra
-tofu fmt -check -recursive
-tofu init -backend=false && tofu validate
-tflint --init && tflint --recursive
-tofu test          # planos offline com providers mockados (tests/)
-shellcheck ../scripts/*.sh ../scripts/tests/*.sh
-../scripts/tests/railway-tokens.test.sh                     # tokens nunca aparecem em argv/saída
-python3 -m unittest discover -s ../scripts/tests            # reconciliação de crons do bootstrap
+scripts/ci.sh
 ```
+
+O `scripts/ci.sh` roda tudo o que o PR checa, igual na máquina local e no CI: `tofu fmt -check`, `init -backend=false` + `validate`, `tofu test` (providers mockados), `tflint` (obrigatório quando `CI=true`), `shellcheck`, o teste offline do `railway-tokens.sh` (tokens nunca aparecem em argv nem na saída) e o `unittest` da reconciliação de crons do bootstrap. O workflow `.github/workflows/validate.yml` só chama esse script, com OpenTofu 1.9.4 e 1.13.2, e não roda em PR draft.
 
 O `tofu test` não usa backend nem criptografia e não toca em conta nenhuma. Os blocos `import` não rodam sob `tofu test`. Eles foram conferidos com `tofu console -var-file=overlens.tfvars` numa cópia sem backend.
 

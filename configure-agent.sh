@@ -83,6 +83,7 @@ echo "[$(date '+%F %T')] Configuring agent $AGENT_ID (path $INFISICAL_CREDENTIAL
 T="$(infisical login --method=universal-auth --silent --plain)" || true
 [[ -n "$T" ]] || { echo "Infisical universal-auth login failed" >&2; exit 1; }
 # The token goes through the environment, never argv (argv is visible via `ps`).
+# shellcheck disable=SC2016  # NOTION_TOKEN must expand inside the child shell
 if ! INFISICAL_TOKEN="$T" infisical run --projectId="$INFISICAL_PROJECT_ID" --env="$INFISICAL_ENV" \
      --path="$INFISICAL_CREDENTIALS_PATH" --silent -- sh -c '[ -n "${NOTION_TOKEN:-}" ]'; then
   echo "NOTION_TOKEN not readable at $INFISICAL_CREDENTIALS_PATH ($INFISICAL_ENV)" >&2
