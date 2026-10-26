@@ -78,7 +78,7 @@ run "onboarding" {
   }
 
   assert {
-    condition     = output.railway_tokens[0].key == "API_SERVER" && output.railway_tokens[0].agent == "pe-backend" && length(output.railway_tokens) == 1
+    condition     = output.railway_tokens[0].key == "BILLING_API_SERVER" && output.railway_tokens[0].agent == "pe-backend" && length(output.railway_tokens) == 1
     error_message = "railway token plan is wrong"
   }
 
@@ -128,6 +128,52 @@ run "rejects_unknown_app" {
   variables {
     agents = {
       x-agent = { display_name = "X", apps = ["nope"] }
+    }
+  }
+
+  expect_failures = [var.agents]
+}
+
+run "railway_same_service_in_two_apps" {
+  command = plan
+
+  variables {
+    apps = {
+      billing = { railway = { api = { project_id = "p1", environment_id = "e1" } } }
+      crm     = { railway = { api = { project_id = "p2", environment_id = "e2" } } }
+    }
+    agents = {
+      pe-backend = {
+        display_name = "PE Backend"
+        railway      = ["billing/api", "crm/api"]
+      }
+    }
+  }
+
+  assert {
+    condition     = toset([for t in output.railway_tokens : t.key]) == toset(["BILLING_API", "CRM_API"])
+    error_message = "tokens of the same service in two apps must not collide"
+  }
+
+  assert {
+    condition     = toset([for t in output.railway_tokens : t.project_id]) == toset(["p1", "p2"])
+    error_message = "each token must keep its own project"
+  }
+}
+
+run "rejects_colliding_railway_names" {
+  command = plan
+
+  variables {
+    apps = {
+      a-b = { railway = { c = { project_id = "p1", environment_id = "e1" } } }
+      a   = { railway = { b-c = { project_id = "p2", environment_id = "e2" } } }
+    }
+    agents = {
+      pe-backend = {
+        display_name = "PE Backend"
+        railway      = ["a-b/c", "a/b-c"]
+      }
     }
   }
 

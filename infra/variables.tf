@@ -196,6 +196,15 @@ variable "agents" {
     ]]))
     error_message = "Every agents.*.railway entry must be \"<app>/<key>\" of a var.apps.*.railway entry."
   }
+
+  # Secret names are RAILWAY_TOKEN_<APP>_<KEY> with non-alphanumerics folded
+  # to "_"; two entries that fold to the same name would overwrite each other.
+  validation {
+    condition = alltrue([for a in values(var.agents) :
+      length(distinct([for r in a.railway : upper(replace(r, "/[^A-Za-z0-9]+/", "_"))])) == length(a.railway)
+    ])
+    error_message = "agents.*.railway entries must map to distinct RAILWAY_TOKEN_<APP>_<KEY> names (e.g. \"a-b/c\" and \"a/b-c\" collide)."
+  }
 }
 
 # ---------------------------------------------------------------------------

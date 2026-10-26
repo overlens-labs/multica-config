@@ -45,8 +45,9 @@ output "railway_tokens" {
   value = flatten([
     for slug, a in var.agents : [
       for r in a.railway : {
-        agent                = slug
-        key                  = upper(replace(split("/", r)[1], "-", "_"))
+        agent = slug
+        # App + service, so billing/api and crm/api don't share RAILWAY_TOKEN_API.
+        key                  = upper(replace(r, "/[^A-Za-z0-9]+/", "_"))
         project_id           = var.apps[split("/", r)[0]].railway[split("/", r)[1]].project_id
         environment_id       = var.apps[split("/", r)[0]].railway[split("/", r)[1]].environment_id
         infisical_project_id = module.base.agents_credentials_project_id

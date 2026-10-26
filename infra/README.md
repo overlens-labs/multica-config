@@ -46,7 +46,7 @@ tofu apply tfplan
 Depois do `apply`:
 
 1. **Cliques manuais** (seção 3.4): private key da GitHub App e `NOTION_TOKEN` em `/<agent>` no Infisical.
-2. **Workspace Multica novo** (só ao replicar em outra org): `scripts/multica-workspace.py bootstrap multica/<org> --dry-run`, revise e rode sem `--dry-run`. Ele recria skills, agentes (instruções, concorrência, runtime por provider) e autopilots com os crons. Para gerar `multica/<org>/` a partir de um workspace existente, use `scripts/multica-workspace.py export multica/<org>`.
+2. **Workspace Multica novo** (só ao replicar em outra org): `scripts/multica-workspace.py bootstrap multica/<org> --dry-run`, revise e rode sem `--dry-run`. Ele recria skills, agentes (instruções, concorrência, runtime por provider) e autopilots com os crons. O template é dono dos triggers `schedule`: mudar um cron no `.json` substitui o agendamento antigo, e triggers `schedule` criados à mão nesse autopilot são removidos. Webhooks não são tocados. Para gerar `multica/<org>/` a partir de um workspace existente, use `scripts/multica-workspace.py export multica/<org>`.
 3. **Multica:** `scripts/sync-multica.sh --var-file infra/<org>.tfvars --dry-run`, depois sem `--dry-run`. Ele grava nas envs do agente só a machine identity, configura o MCP do Notion e ajusta concorrência e skills. Use `--railway` para criar também os tokens do Railway.
 4. **Smoke test** de cada agente, como no runbook §9 (Validar).
 
@@ -84,7 +84,7 @@ Não dá para importar valores que não podem ser lidos de volta: o **client sec
        display_name = "PE Backend"                # nome exato no Multica
        apps         = ["billing"]                 # projetos <app>-dev em que entra
        aws          = true                        # usuário IAM + chaves AWS_*
-       railway      = ["billing/api"]             # tokens Railway (<app>/<chave em apps.*.railway>)
+       railway      = ["billing/api"]             # vira RAILWAY_TOKEN_BILLING_API (<app>/<chave em apps.*.railway>)
        github = {
          installation_id = 12345678
          repos           = ["billing", "billing-web"]
@@ -100,6 +100,10 @@ Não dá para importar valores que não podem ser lidos de volta: o **client sec
 5. Se o agente ainda não existe no Multica: `scripts/multica-workspace.py bootstrap multica/<org>` (com o `.json`/`.md` dele) ou `sync-multica.sh --runtime-id <id>` (cria um agente vazio).
 6. `scripts/sync-multica.sh --var-file infra/<org>.tfvars --only pe-backend [--railway]`.
 7. Smoke test (runbook §9).
+
+**Tokens do Railway:** cada entrada `<app>/<chave>` vira o segredo `RAILWAY_TOKEN_<APP>_<CHAVE>` em `/<agent>`, com caracteres não alfanuméricos trocados por `_` (`billing/api-server` → `RAILWAY_TOKEN_BILLING_API_SERVER`). Assim, o mesmo serviço em dois apps não colide. Se duas entradas resultarem no mesmo nome (`a-b/c` e `a/b-c`), a validação de `var.agents` recusa o `plan`. As instruções do agente devem usar o nome completo, exportando o token como `RAILWAY_TOKEN` só na hora do uso.
+
+> **Migração:** a primeira versão deste PR gerava `RAILWAY_TOKEN_<CHAVE>`, sem o app, e o runbook OVER-7 usava `RAILWAY_TOKEN_<PROJECT>`. Nenhum token foi criado com esses nomes (a Overlens ainda não tem `apps`). Se algum existir à mão, rode `railway-tokens.sh` para criar os nomes novos, atualize as instruções dos agentes, apague os segredos antigos em `/<agent>` e os tokens antigos no Railway.
 
 O `apply` cria: identity `agent-<agent>` com Universal Auth e client secret; membership em `agents-credentials` e nos `<app>-dev`; a pasta `/<agent>`; `GH_APP_ID`, `GH_APP_INSTALLATION_ID` e `GIT_AUTHOR_*`/`GIT_COMMITTER_*`; os repos na instalação da App; e, com `aws = true`, o usuário `/agents/agent-<agent>`, a inline policy `assume-agents-dev`, a access key e `AWS_*` em `/<agent>`.
 
@@ -146,7 +150,9 @@ tofu fmt -check -recursive
 tofu init -backend=false && tofu validate
 tflint --init && tflint --recursive
 tofu test          # planos offline com providers mockados (tests/)
-shellcheck ../scripts/*.sh
+shellcheck ../scripts/*.sh ../scripts/tests/*.sh
+../scripts/tests/railway-tokens.test.sh                     # tokens nunca aparecem em argv/saída
+python3 -m unittest discover -s ../scripts/tests            # reconciliação de crons do bootstrap
 ```
 
 O `tofu test` não usa backend nem criptografia e não toca em conta nenhuma. Os blocos `import` não rodam sob `tofu test`. Eles foram conferidos com `tofu console -var-file=overlens.tfvars` numa cópia sem backend.

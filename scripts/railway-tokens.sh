@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Creates Railway project tokens (scoped to the dev environment) for the
-# agents and writes each one straight to Infisical as RAILWAY_TOKEN_<KEY> in
+# agents and writes each one straight to Infisical as RAILWAY_TOKEN_<APP>_<KEY> in
 # /<agent>. The community Railway provider has no project-token resource, so
 # this runs outside OpenTofu (see infra/README.md).
 #
-# Idempotent: an existing RAILWAY_TOKEN_<KEY> is left alone unless --rotate.
-# Tokens never touch argv, files or stdout.
+# Idempotent: an existing RAILWAY_TOKEN_<APP>_<KEY> is left alone unless --rotate.
+# Tokens never touch argv, files or stdout (scripts/tests/railway-tokens.test.sh).
 #
 # Admin environment:
 #   RAILWAY_API_TOKEN                          account/team token of the admin
@@ -91,8 +91,10 @@ while read -r item; do
   fi
 
   method=POST; (( exists )) && method=PATCH
-  code="$(jq -n --arg w "$project" --arg p "$path" --arg v "$token" \
-      '{workspaceId: $w, environment: "dev", secretPath: $p, secretValue: $v, type: "shared"}' \
+  # The token reaches jq through its environment (env.RAILWAY_PROJECT_TOKEN),
+  # never through argv, which any local user can read in `ps`.
+  code="$(RAILWAY_PROJECT_TOKEN="$token" jq -n --arg w "$project" --arg p "$path" \
+      '{workspaceId: $w, environment: "dev", secretPath: $p, secretValue: env.RAILWAY_PROJECT_TOKEN, type: "shared"}' \
     | infisical_api "$method" "/v3/secrets/raw/$name" --data-binary @-)"
   unset token
   if [[ "$code" != 200 ]]; then

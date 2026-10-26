@@ -14,9 +14,10 @@ Layout of <dir>:
     autopilots/<slug>.json        prompt, assignee by name, schedule triggers
 
 Matching is by name (skills, agents) and title (autopilots), so bootstrap is
-idempotent: it creates what's missing and updates what exists. It never
-deletes anything and never touches agent env or MCP config: credentials are
-set by sync-multica.sh from the OpenTofu outputs.
+idempotent: it creates what's missing and updates what exists. The only
+deletions are schedule triggers that are no longer in an autopilot's template
+(the template owns its schedules). It never touches agent env or MCP config:
+credentials are set by sync-multica.sh from the OpenTofu outputs.
 
 Workspace-specific IDs (members, projects, runtimes) are not exported, nor
 are built-in agents such as Mika (every workspace has them).
@@ -193,19 +194,40 @@ def bootstrap(root: Path, overrides: dict[str, str], dry: bool) -> None:
             pid = autopilots[meta["title"]]["id"]
             print(f"autopilot {meta['title']}: update")
             multica("autopilot", "update", pid, *flags, "--status", meta.get("status", "active"), dry_run=dry)
-            existing = {(t["cron_expression"], t.get("timezone") or "UTC") for t in
-                        as_list(multica("autopilot", "trigger-list", pid), "triggers") if t.get("kind") == "schedule"}
+            current = [t for t in as_list(multica("autopilot", "trigger-list", pid), "triggers") if t.get("kind") == "schedule"]
         else:
             print(f"autopilot {meta['title']}: create")
             created = multica("autopilot", "create", "--title", meta["title"], *flags, dry_run=dry)
             pid = (created.get("autopilot", created)["id"]) if created else f"<{meta['title']}>"
-            existing = set()
-        for t in meta.get("triggers") or []:
-            if (t["cron"], t["timezone"]) in existing:
-                continue
-            multica("autopilot", "trigger-add", pid, "--kind", "schedule", "--cron", t["cron"],
-                    "--timezone", t["timezone"], "--label", t.get("label", ""), dry_run=dry)
+            current = []
+        reconcile_schedules(pid, meta.get("triggers") or [], current, dry)
 
+
+def reconcile_schedules(pid: str, wanted: list[dict], current: list[dict], dry: bool) -> None:
+    """Make the autopilot's schedule triggers equal the template's.
+
+    The template owns every schedule trigger: one whose (cron, timezone) is no
+    longer in the template is deleted, so changing a cron replaces the old
+    schedule instead of adding a second one. Webhook triggers are not touched.
+    """
+    by_key: dict[tuple[str, str], list[dict]] = {}
+    for t in current:
+        by_key.setdefault((t["cron_expression"], t.get("timezone") or "UTC"), []).append(t)
+    for t in wanted:
+        key = (t["cron"], t.get("timezone") or "UTC")
+        label = t.get("label", "")
+        matches = by_key.pop(key, [])
+        if not matches:
+            multica("autopilot", "trigger-add", pid, "--kind", "schedule", "--cron", key[0],
+                    "--timezone", key[1], "--label", label, dry_run=dry)
+            continue
+        keep, extra = matches[0], matches[1:]
+        if (keep.get("label") or "") != label:
+            multica("autopilot", "trigger-update", pid, keep["id"], "--label", label, dry_run=dry)
+        by_key.setdefault(("__duplicates__", ""), []).extend(extra)
+    for stale in (t for ts in by_key.values() for t in ts):
+        print(f"  removing schedule {stale['cron_expression']} ({stale.get('timezone') or 'UTC'})")
+        multica("autopilot", "trigger-delete", pid, stale["id"], dry_run=dry)
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
