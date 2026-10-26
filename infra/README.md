@@ -267,12 +267,11 @@ Faça na ordem. Nada daqui fica no WSL depois: as credenciais admin passam a exi
 
    Em Settings → Actions, deixe "Require approval for all external contributors" ligado (o repo é público).
 5. **Workflows:** commite `.github/workflows/plan.yml` e `apply.yml` (anexos da OVER-15). O `CODEOWNERS` já está na raiz do repo.
-6. **Ruleset `main-protection`:**
-   - PR obrigatório com 0 aprovações, **Require review from Code Owners**, "Dismiss stale approvals" e "Require approval of the most recent reviewable push";
-   - status checks obrigatórios: `Static checks (OpenTofu 1.9.4)`, `Static checks (OpenTofu 1.13.2)` e `plan` (fonte: GitHub Actions), com **Require branches to be up to date**, que força um plano novo quando a `main` anda;
-   - bloquear force push e deleção, com bypass vazio.
+6. **Rulesets.** O ruleset de org `main-protection` (id `25838050`) já é o piso de todos os repos: PR obrigatório, sem force push nem deleção, bypass vazio. **Não** ponha checks obrigatórios nele, porque um check que não roda num repo trava o merge ali. Falta:
+   - **Review de code owner obrigatório**, na org (não tem efeito em repo sem `CODEOWNERS`) ou num ruleset de repo, com "Dismiss stale approvals" e "Require approval of the most recent reviewable push". A contagem de aprovações fica em 0, porque o Tech Lead faz merge do que não tem code owner.
+   - Um **ruleset de repo** no `multica-config`, na branch `main`, com os status checks obrigatórios `Static checks (OpenTofu 1.9.4)`, `Static checks (OpenTofu 1.13.2)` e `plan` (fonte: GitHub Actions) e com **Require branches to be up to date**, que força um plano novo quando a `main` anda.
 
-   A fase 2 leva isso para o módulo `repos`.
+   As regras de org e de repo se somam. A fase 2 leva os dois para o módulo `repos`; até lá, crie-os pela UI.
 7. **Migrar as instalações** (depois do primeiro `apply` do pipeline, que mostra os repos como `forget`):
    ```bash
    cd infra/app-installations
