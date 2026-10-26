@@ -47,7 +47,7 @@ agents = {
     display_name = "PE Backend"
     github = {
       installation_id = 175214890
-      repos           = ["multica-config"]
+      repos           = ["multica-config", "houston", "overcast"]
     }
     multica = { max_concurrent_tasks = 2, skills = ["overlens-conventions"] }
   }
@@ -55,7 +55,7 @@ agents = {
     display_name = "PE Frontend"
     github = {
       installation_id = 175214920
-      repos           = ["multica-config"]
+      repos           = ["multica-config", "houston", "overcast"]
     }
     multica = { max_concurrent_tasks = 2, skills = ["overlens-conventions"] }
   }
@@ -63,7 +63,7 @@ agents = {
     display_name = "Tech Lead"
     github = {
       installation_id = 175214968
-      repos           = ["multica-config"]
+      repos           = ["multica-config", "houston", "overcast"]
       bot_user_id     = 347949253
     }
     multica = { max_concurrent_tasks = 1, skills = ["overlens-conventions"] }
@@ -72,7 +72,7 @@ agents = {
     display_name = "Bibliotecário"
     github = {
       installation_id = 175214708
-      repos           = ["multica-config"]
+      repos           = ["multica-config", "houston", "overcast"]
     }
     multica = { max_concurrent_tasks = 1, skills = ["overlens-conventions"] }
   }
