@@ -6,12 +6,12 @@
 # them in before the first `tofu plan`.
 
 org            = "overlens"
-aws_account_id = "000000000000" # TODO: Overlens AWS account id
-aws_region     = "sa-east-1"    # TODO: confirm the default region
+aws_account_id = "437341204924"
+aws_region     = "sa-east-1"
 github_org     = "overlens"
 
 infisical_host   = "https://secrets.overlens.com.br"
-infisical_org_id = "TODO-infisical-org-id"
+infisical_org_id = "cab0c8c3-80c9-4a9d-a381-8281d46eefdf"
 
 aws = {
   dev_bucket_pattern = "dev-*-overlens"
@@ -46,7 +46,7 @@ agents = {
   pe-backend = {
     display_name = "PE Backend"
     github = {
-      installation_id = 0 # TODO: from the App's installation URL
+      installation_id = 175214890
       repos           = ["multica-config"]
     }
     multica = { max_concurrent_tasks = 2, skills = ["overlens-conventions"] }
@@ -54,7 +54,7 @@ agents = {
   pe-frontend = {
     display_name = "PE Frontend"
     github = {
-      installation_id = 0 # TODO
+      installation_id = 175214920
       repos           = ["multica-config"]
     }
     multica = { max_concurrent_tasks = 2, skills = ["overlens-conventions"] }
@@ -62,7 +62,7 @@ agents = {
   tech-lead = {
     display_name = "Tech Lead"
     github = {
-      installation_id = 0 # TODO
+      installation_id = 0 175214968
       repos           = ["multica-config"]
       bot_user_id     = 347949253
     }
@@ -71,7 +71,7 @@ agents = {
   bibliotecario = {
     display_name = "Bibliotecário"
     github = {
-      installation_id = 0 # TODO
+      installation_id = 175214708
       repos           = ["multica-config"]
     }
     multica = { max_concurrent_tasks = 1, skills = ["overlens-conventions"] }
@@ -84,22 +84,22 @@ imports = {
 
   agents = {
     pe-backend = {
-      infisical_identity_id = "TODO-identity-id"
+      infisical_identity_id = "2d814652-0fe8-4d06-82ff-5e1c249fc370"
       folder_exists         = true
       secrets               = ["GH_APP_ID", "GH_APP_INSTALLATION_ID", "GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL"]
     }
     pe-frontend = {
-      infisical_identity_id = "TODO-identity-id"
+      infisical_identity_id = "da1a9e87-caa6-4ff0-ab4e-52d102bd4d6d"
       folder_exists         = true
       secrets               = ["GH_APP_ID", "GH_APP_INSTALLATION_ID", "GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL"]
     }
     tech-lead = {
-      infisical_identity_id = "TODO-identity-id"
+      infisical_identity_id = "0262b704-3771-4473-9190-5f319bd89480"
       folder_exists         = true
       secrets               = ["GH_APP_ID", "GH_APP_INSTALLATION_ID", "GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL"]
     }
     bibliotecario = {
-      infisical_identity_id = "TODO-identity-id"
+      infisical_identity_id = "c6c31b57-ee67-42da-9dc4-e917d1ca2278"
       folder_exists         = true
       secrets               = ["GH_APP_ID", "GH_APP_INSTALLATION_ID", "GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL"]
     }
