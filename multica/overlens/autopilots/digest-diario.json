@@ -1,0 +1,15 @@
+{
+  "title": "Digest diário",
+  "agent": "Mika",
+  "mode": "create_issue",
+  "issue_title_template": "Digest diário — {{date}}",
+  "status": "active",
+  "description": "Gere o **digest diário** do workspace Overlens para o Rafael (executivo), cobrindo o **dia anterior** (00:00–23:59, America/Sao_Paulo). Se hoje for terça, cubra apenas segunda (o fim de semana entra no digest semanal).\n\nUse o CLI do Multica (issues, comentários, status, PRs vinculados, autopilots) para levantar os fatos. Não invente; tudo deve ter link para a issue/PR.\n\nEscreva o digest como comentário nesta issue, em português, curto e escaneável:\n1. **Precisa de você** — issues `blocked` mencionando o Rafael, decisões de produto pendentes, promoções para stage/prod aguardando aprovação. Se nada, diga \"Nada pendente\".\n2. **Entregue** — issues movidas para `done` / PRs mergeados (1 linha cada, com link).\n3. **Em andamento** — o que está `in_progress`/`in_review` e quem está com cada um.\n4. **Riscos e gargalos** — issues paradas há mais de 2 dias, PRs com CI falhando repetidamente, autopilots falhando, agentes sobrecarregados.\n5. **Números** — issues criadas / concluídas / bloqueadas.\n\nComece o comentário mencionando o Rafael: [@Rafael Braz](mention://member/aa054ba6-541e-4ab9-9632-0b0902a02244). Depois mova esta issue para `done`.",
+  "triggers": [
+    {
+      "cron": "0 11 * * 2-5",
+      "timezone": "America/Sao_Paulo",
+      "label": "Ter-Sex 11h"
+    }
+  ]
+}

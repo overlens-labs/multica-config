@@ -1,0 +1,15 @@
+{
+  "name": "PE Backend",
+  "runtime_provider": "claude",
+  "description": "Product Engineer: backend, APIs, services, workers, data e scripts.",
+  "max_concurrent_tasks": 2,
+  "model": "",
+  "thinking_level": "",
+  "custom_args": [],
+  "runtime_config": {},
+  "permission_mode": "public_to",
+  "public_to_workspace": true,
+  "skills": [
+    "overlens-conventions"
+  ]
+}

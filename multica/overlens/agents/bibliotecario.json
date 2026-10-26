@@ -1,0 +1,15 @@
+{
+  "name": "Bibliotecário",
+  "runtime_provider": "claude",
+  "description": "Mantém o Notion vivo: estrutura, consistência e auditoria semanal de docs.",
+  "max_concurrent_tasks": 1,
+  "model": "",
+  "thinking_level": "",
+  "custom_args": [],
+  "runtime_config": {},
+  "permission_mode": "public_to",
+  "public_to_workspace": true,
+  "skills": [
+    "overlens-conventions"
+  ]
+}

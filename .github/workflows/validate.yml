@@ -1,0 +1,48 @@
+# Static validation of infra/ and scripts/ (scripts/ci.sh). No credentials,
+# no backend, no plan/apply: providers are mocked in `tofu test`.
+name: Validate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Static checks (OpenTofu ${{ matrix.tofu }})
+    # Drafts don't run CI (saves Actions minutes); marking ready triggers it.
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # Minimum supported (required_version) and the version used locally.
+        tofu: ["1.9.4", "1.13.2"]
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version: ${{ matrix.tofu }}
+          tofu_wrapper: false
+
+      - uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: v0.65.0
+
+      # shellcheck, jq and python3 come with ubuntu-latest.
+      - name: Run checks
+        run: scripts/ci.sh
