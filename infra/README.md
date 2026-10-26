@@ -207,7 +207,8 @@ O `plan` executa código do PR e decripta o state, que contém segredos. Por iss
   - `provisioner` (inclusive `local-exec`), `data "external"` e `data "http"`;
   - providers fora da allowlist (o lock file é lido com `-lockfile=readonly`);
   - módulos não locais ou fora de `infra/`;
-  - `*.tf.json`, `.terraform/` versionado, `terraform.d/` e arquivos de tipo inesperado (injeção de binário de provider).
+  - `*.tf.json`, `.terraform/` versionado, `terraform.d/` e arquivos de tipo inesperado (injeção de binário de provider);
+  - symlinks e arquivos especiais em qualquer ponto da árvore, porque o OpenTofu segue symlinks e carregaria código que o check não leu. Esse caso falha antes de qualquer `tofu init`.
 
   Para mudar a allowlist, primeiro faça um PR só no script e faça o merge dele.
 - As credenciais do `plan` são de leitura (AWS e GitHub). A exceção é a identity do Infisical: não existe papel de admin só leitura que cubra identities.

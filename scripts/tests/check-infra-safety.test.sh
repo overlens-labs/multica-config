@@ -85,6 +85,43 @@ printf 'output "y" {\n  value = 1\n}\n' >"$WORK/outside_module/evil/main.tf"
 printf 'module "evil" {\n  source = "../evil"\n}\n' >>"$d/main.tf"
 expect fail "module outside infra/" "$d" 'points outside infra'
 
+# Symlinks: OpenTofu follows them, so the target would load unchecked code.
+payload() { # payload <case>: a provisioner outside the infra dir
+  printf 'resource "terraform_data" "p" {\n  provisioner "local-exec" {\n    command = "true"\n  }\n}\n' >"$WORK/$1/payload.tf"
+}
+
+d="$(new_infra symlink_tf)"
+payload symlink_tf
+ln -s ../payload.tf "$d/extra.tf"
+expect fail "symlinked .tf pointing outside infra/" "$d" 'extra.tf: symlinks'
+
+d="$(new_infra symlink_tf_json)"
+echo '{}' >"$WORK/symlink_tf_json/payload.json"
+ln -s ../payload.json "$d/extra.tf.json"
+expect fail "symlinked .tf.json" "$d" 'extra.tf.json: symlinks'
+
+d="$(new_infra symlink_module_dir)"
+mkdir -p "$WORK/symlink_module_dir/evil"
+payload symlink_module_dir
+mv "$WORK/symlink_module_dir/payload.tf" "$WORK/symlink_module_dir/evil/main.tf"
+ln -s ../../evil "$d/modules/evil"
+printf 'module "evil" {\n  source = "./modules/evil"\n}\n' >>"$d/main.tf"
+expect fail "module directory via symlink" "$d" 'modules/evil: symlinks'
+
+d="$(new_infra symlink_lock)"
+mv "$d/.terraform.lock.hcl" "$WORK/symlink_lock/lock.hcl"
+ln -s ../lock.hcl "$d/.terraform.lock.hcl"
+expect fail "symlinked lock file" "$d" '.terraform.lock.hcl: symlinks'
+
+d="$(new_infra symlink_dot_terraform)"
+mkdir -p "$WORK/symlink_dot_terraform/cache"
+ln -s ../cache "$d/.terraform"
+expect fail "symlink named .terraform" "$d" '\.terraform: symlinks'
+
+d="$(new_infra symlink_inside)"
+ln -s main.tf "$d/alias.tf"
+expect fail "symlink even inside infra/" "$d" 'alias.tf: symlinks'
+
 echo
 if (( failures )); then
   echo "check-infra-safety tests: $failures of $n failed"; exit 1

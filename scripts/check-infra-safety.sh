@@ -8,7 +8,9 @@
 #   - providers outside an allowlist (catches external/http under any alias);
 #   - modules not sourced from inside the infra directory;
 #   - JSON-syntax config (*.tf.json) and anything that can inject a provider
-#     binary: committed `.terraform/` or `terraform.d/` dirs, unexpected files.
+#     binary: committed `.terraform/` or `terraform.d/` dirs, unexpected files;
+#   - symlinks (or any non-regular file) anywhere in the tree: OpenTofu follows
+#     them, so `main.tf -> ../payload.tf` would load code this check never read.
 #
 # The plan workflow runs the copy of this script from the PR's *base* commit
 # against the PR's checkout, so a PR can't relax the rules it is checked by.
@@ -19,7 +21,10 @@
 set -euo pipefail
 
 INFRA="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/infra}"
-INFRA="$(cd "$INFRA" && pwd)"
+if [[ -L "${INFRA%/}" ]]; then
+  echo "check-infra-safety: $INFRA is a symlink" >&2; exit 1
+fi
+INFRA="$(cd "$INFRA" && pwd -P)"
 
 ALLOWED_PROVIDERS=(
   registry.opentofu.org/hashicorp/aws
@@ -30,6 +35,22 @@ ALLOWED_PROVIDERS=(
 
 fail=0
 bad() { echo "check-infra-safety: $*" >&2; fail=1; }
+
+# --- 0. Symlinks and special files (fail fast, before anything reads them) --
+# Only regular files and directories are allowed. `.terraform/` (tofu's local
+# cache, never committed; checked below) is skipped only when it is a real
+# directory, so a symlink named .terraform is still caught.
+mapfile -d '' odd < <(find "$INFRA" \( -type d -name .terraform \) -prune -o ! -type f ! -type d -print0)
+if git -C "$INFRA" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  # Tracked symlinks too, in case the checkout didn't materialize them.
+  while IFS= read -r -d '' p; do odd+=("$INFRA/$p"); done \
+    < <(git -C "$INFRA" ls-files -s -z -- . | sed -z -nE 's@^120000 [0-9a-f]+ [0-9]+\t@@p')
+fi
+if (( ${#odd[@]} > 0 )); then
+  for p in "${odd[@]}"; do echo "check-infra-safety: ${p#"$INFRA"/}: symlinks and special files are not allowed" >&2; done
+  echo "check-infra-safety: FAILED" >&2
+  exit 1
+fi
 
 # --- 1. Files ---------------------------------------------------------------
 # Every file under infra/ (ignoring tofu's own local cache) must be plain text
@@ -78,6 +99,12 @@ while IFS= read -r -d '' tf; do
     bad "$rel: data \"external\" / data \"http\" are not allowed"
   fi
 done < <(find "$INFRA" -name .terraform -prune -o -type f -name '*.tf' -print0)
+
+# Nothing below runs `tofu` on a tree that already failed a static rule.
+if (( fail )); then
+  echo "check-infra-safety: FAILED" >&2
+  exit 1
+fi
 
 # --- 3. Providers and modules, per root module -----------------------------
 # A root module is a directory with a lock file. `-lockfile=readonly` makes
