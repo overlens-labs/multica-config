@@ -62,7 +62,7 @@ agents = {
   tech-lead = {
     display_name = "Tech Lead"
     github = {
-      installation_id = 0 175214968
+      installation_id = 175214968
       repos           = ["multica-config"]
       bot_user_id     = 347949253
     }
