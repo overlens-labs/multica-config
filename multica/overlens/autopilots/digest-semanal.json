@@ -1,0 +1,15 @@
+{
+  "title": "Digest semanal",
+  "agent": "Mika",
+  "mode": "create_issue",
+  "issue_title_template": "Digest semanal — {{date}}",
+  "status": "active",
+  "description": "Gere o **digest semanal** do workspace Overlens para o Rafael (executivo), cobrindo a **semana anterior completa** (segunda 00:00 a domingo 23:59, America/Sao_Paulo).\n\nUse o CLI do Multica (issues, comentários, status, PRs vinculados, projetos, autopilots) para levantar os fatos. Não invente; tudo deve ter link.\n\nEscreva o digest como comentário nesta issue, em português, com visão executiva:\n1. **Precisa de você** — decisões de produto, aprovações de stage/prod, acessos/credenciais faltando.\n2. **Resultados da semana** — o que foi entregue por projeto, em linguagem de resultado (não de tarefa).\n3. **Progresso por projeto** — status, próximos marcos, riscos.\n4. **Saúde da operação** — throughput (criadas/concluídas), tempo médio em review, PRs devolvidos pelo Tech Lead, bloqueios recorrentes, autopilots falhando, achados de segurança e do Bibliotecário.\n5. **Recomendações** — até 3 ajustes de processo/estrutura que destravariam mais autonomia.\n\nComece o comentário mencionando o Rafael: [@Rafael Braz](mention://member/aa054ba6-541e-4ab9-9632-0b0902a02244). Depois mova esta issue para `done`.",
+  "triggers": [
+    {
+      "cron": "0 11 * * 1",
+      "timezone": "America/Sao_Paulo",
+      "label": "Seg 11h"
+    }
+  ]
+}

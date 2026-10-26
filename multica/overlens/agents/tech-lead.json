@@ -1,0 +1,15 @@
+{
+  "name": "Tech Lead",
+  "runtime_provider": "codex",
+  "description": "Revisa e faz merge de todos os PRs (inclui checklist de segurança). Roda no Codex.",
+  "max_concurrent_tasks": 1,
+  "model": "",
+  "thinking_level": "",
+  "custom_args": [],
+  "runtime_config": {},
+  "permission_mode": "public_to",
+  "public_to_workspace": true,
+  "skills": [
+    "overlens-conventions"
+  ]
+}

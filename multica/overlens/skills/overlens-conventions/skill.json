@@ -1,0 +1,5 @@
+{
+  "name": "overlens-conventions",
+  "description": "Shared operating rules for every Overlens agent: language, issue flow, PRs, docs (Notion), secrets and safety boundaries.",
+  "config": {}
+}

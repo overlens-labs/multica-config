@@ -1,0 +1,15 @@
+{
+  "title": "Auditoria semanal do Notion",
+  "agent": "Bibliotecário",
+  "mode": "create_issue",
+  "issue_title_template": "Auditoria do Notion — {{date}}",
+  "status": "paused",
+  "description": "Execute a **auditoria semanal do Notion** descrita nas suas instruções (seção \"Weekly audit\").\nCorrija o que for mecânico, abra issues para o que exigir conhecimento de domínio e resuma como comentário nesta issue, em português (o que foi corrigido, o que virou issue, saúde geral da base). Depois mova esta issue para `done`.",
+  "triggers": [
+    {
+      "cron": "0 11 * * 4",
+      "timezone": "America/Sao_Paulo",
+      "label": "Qui 11h"
+    }
+  ]
+}

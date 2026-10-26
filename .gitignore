@@ -1,0 +1,16 @@
+# OpenTofu
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+# Per-org values may hold IDs you don't want public; the Overlens example is tracked.
+*.tfvars
+!infra/overlens.tfvars
+
+# Never commit generated credential files
+agent-env.json
+*.pem
+
+# Python
+__pycache__/

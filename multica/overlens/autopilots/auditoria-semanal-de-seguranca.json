@@ -1,0 +1,15 @@
+{
+  "title": "Auditoria semanal de segurança",
+  "agent": "Tech Lead",
+  "mode": "create_issue",
+  "issue_title_template": "Auditoria de segurança — {{date}}",
+  "status": "paused",
+  "description": "Execute a **auditoria semanal de segurança** descrita nas suas instruções (seção \"Weekly security audit\"), cobrindo os repositórios da org `overlens` que estão no fluxo dos agentes e os PRs mergeados nos últimos 7 dias.\nAbra uma issue por achado acionável (atribuída ao executor certo) e resuma tudo como comentário nesta issue, em português. Se houver achado crítico, mencione o Rafael: [@Rafael Braz](mention://member/aa054ba6-541e-4ab9-9632-0b0902a02244). Depois mova esta issue para `done`.",
+  "triggers": [
+    {
+      "cron": "0 11 * * 5",
+      "timezone": "America/Sao_Paulo",
+      "label": "Sex 11h"
+    }
+  ]
+}
