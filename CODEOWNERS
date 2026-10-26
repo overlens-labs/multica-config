@@ -1,0 +1,13 @@
+# Code owners of multica-config (OVER-15). With "Require review from Code
+# Owners" in the main ruleset, a PR touching these paths only merges with an
+# approval from the owner, whoever opened it.
+#
+# Lives at the repo root (not .github/) so it can change through a normal PR;
+# it owns itself, so changing it also needs the owner's approval.
+# GitHub reads .github/CODEOWNERS first: don't create a second copy there.
+
+/infra/              @RafaelBraz
+/scripts/            @RafaelBraz
+/.github/            @RafaelBraz
+/configure-agent.sh  @RafaelBraz
+/CODEOWNERS          @RafaelBraz

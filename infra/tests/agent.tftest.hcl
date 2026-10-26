@@ -36,7 +36,7 @@ variables {
     isolate      = false
   }
   app_project_ids = { billing = "billing-dev-id" }
-  github          = { app_slug = "acme-pe-backend", installation_id = 42, repos = ["app", "ops"] }
+  github          = { app_slug = "acme-pe-backend", installation_id = 42 }
   aws = {
     account_id  = "123456789012"
     region      = "us-east-1"
@@ -90,8 +90,8 @@ run "full_agent" {
   }
 
   assert {
-    condition     = length(github_app_installation_repository.this) == 2 && length(infisical_project_identity.app) == 1
-    error_message = "repos and app memberships"
+    condition     = length(infisical_project_identity.app) == 1
+    error_message = "app memberships"
   }
 
   assert {
@@ -115,7 +115,7 @@ run "github_only_isolated_existing_folder" {
   variables {
     aws           = null
     folder_exists = true
-    github        = { app_slug = "acme-tech-lead", installation_id = 43, repos = ["app"], bot_user_id = 999 }
+    github        = { app_slug = "acme-tech-lead", installation_id = 43, bot_user_id = 999 }
     agents_credentials = {
       project_id   = "creds"
       project_slug = "agents-credentials"

@@ -59,7 +59,6 @@ module "agent" {
   github = each.value.github == null ? null : {
     app_slug        = coalesce(each.value.github.app_slug, "${var.org}-${each.key}")
     installation_id = each.value.github.installation_id
-    repos           = each.value.github.repos
     bot_user_id     = each.value.github.bot_user_id
   }
 }
