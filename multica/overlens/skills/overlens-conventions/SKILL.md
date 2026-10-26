@@ -46,6 +46,43 @@ instructions add to them; they never relax them.
 - Batch commits; avoid pushing every small change while the PR is ready.
 - PR body: summary, acceptance criteria checklist, how it was verified, preview link when available.
 
+### 4.1 GitHub access (clone, commit, push, PRs)
+
+Each agent has its own GitHub App (`overlens-<agent>`). There is no `gh auth login`, SSH key or global
+git identity on this machine, and `multica repo checkout` may refuse repos not registered in the workspace:
+that is expected, **not** a missing credential. Use this flow instead:
+
+- Your Multica env has `INFISICAL_DOMAIN`, `INFISICAL_UNIVERSAL_AUTH_CLIENT_ID` and `_SECRET`.
+- Your GitHub secrets live in the Infisical project `agents-credentials`
+  (`ba198313-2f1c-4c66-b9b5-4bb36599308a`), env `dev`, path `/<agent>`:
+  `/pe-backend`, `/pe-frontend`, `/tech-lead`, `/bibliotecario`.
+  They are `GH_APP_ID`, `GH_APP_INSTALLATION_ID`, `GH_APP_PRIVATE_KEY` and `GIT_AUTHOR_*`/`GIT_COMMITTER_*`
+  (your bot identity: never set `user.name`/`user.email` yourself).
+- `gh-app-token` (in `~/.local/bin`) turns `GH_APP_*` into a 1-hour installation token.
+
+Public repos clone anonymously with plain git; clone private ones with `gh_git clone` inside the block below.
+Run every git/gh command that needs identity or write access inside `infisical run`:
+
+```bash
+export INFISICAL_TOKEN="$(infisical login --method=universal-auth --silent --plain)"
+infisical run --projectId=ba198313-2f1c-4c66-b9b5-4bb36599308a --env=dev --path=/<agent> -- bash -c '
+  export GH_TOKEN="$(gh-app-token)"
+  gh_git() { git -c credential.helper= -c credential.helper="!f() { echo username=x-access-token; echo password=\$GH_TOKEN; }; f" "$@"; }
+  git commit -m "chore: ..."
+  gh_git push -u origin HEAD
+  gh pr create --draft --title "OVER-<n>: ..." --body-file pr.md
+'
+unset INFISICAL_TOKEN
+```
+
+- The token is passed through the environment and a credential helper, never in a URL or argument.
+  Never print it, never write it to `.git/config`, `~/.git-credentials` or `gh` config.
+- `~/.local/bin/infisical-agent <project-id> /<agent> -- <cmd>` is a shortcut for the login + `infisical run` part.
+- The App only sees the repos in its installation (managed in `multica-config/infra`, `agents.<agent>.github.repos`).
+  A 404 on a repo means it is not in that list: block and ask Rafael, do not use another credential.
+- Escalate (§8) only if this flow itself fails: `infisical login` returns 401, a `GH_APP_*` secret is missing,
+  or `gh-app-token` gets an error from GitHub. Quote the failing step, never the values.
+
 ## 5. Local verification and machine resources
 
 All agents share Rafael's personal computer. Be frugal:
