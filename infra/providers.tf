@@ -1,9 +1,16 @@
-# Admin credentials come from the environment, never from tfvars:
-#   AWS:       AWS_PROFILE (or AWS_ACCESS_KEY_ID/...) of the admin
-#   Infisical: INFISICAL_UNIVERSAL_AUTH_CLIENT_ID / _SECRET of an admin identity
+# Admin credentials come from the environment, never from tfvars. In the
+# pipeline (README, "Pipeline") they are short-lived and issued per run:
+#   AWS:       OIDC role via aws-actions/configure-aws-credentials (AWS_* env).
+#              Backend and state encryption use the same default chain, so
+#              no AWS_PROFILE is needed. Locally (break-glass): AWS_PROFILE.
+#   Infisical: admin identity of the pipeline. OIDC Auth with
+#              INFISICAL_AUTH_METHOD=oidc, INFISICAL_MACHINE_IDENTITY_ID and the
+#              GitHub JWT in INFISICAL_AUTH_JWT; or Universal Auth with
+#              INFISICAL_UNIVERSAL_AUTH_CLIENT_ID / _SECRET.
 #   Neon:      NEON_API_KEY
-#   GitHub:    GITHUB_TOKEN of an org owner (user token: adding repos to an
-#              App installation is not allowed with an App token)
+#   GitHub:    GITHUB_TOKEN, an installation token of the overlens-infra-admin
+#              App. App installations (which need an owner's user token) live
+#              in infra/app-installations/, outside the pipeline.
 
 provider "aws" {
   region              = var.aws_region

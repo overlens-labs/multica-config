@@ -14,12 +14,20 @@ step() { echo; echo "==> $*"; }
 step "tofu fmt"
 tofu -chdir=infra fmt -check -recursive
 
-step "tofu init (no backend) + validate"
-tofu -chdir=infra init -backend=false -input=false -no-color >/dev/null
-tofu -chdir=infra validate -no-color
+# Two root modules: the main stack (applied by the pipeline) and the App
+# installations (applied locally by an org owner; see infra/README.md).
+for root in infra infra/app-installations; do
+  step "$root: tofu init (no backend) + validate"
+  tofu -chdir="$root" init -backend=false -input=false -no-color >/dev/null
+  tofu -chdir="$root" validate -no-color
 
-step "tofu test (mocked providers)"
-tofu -chdir=infra test -no-color
+  step "$root: tofu test (mocked providers)"
+  tofu -chdir="$root" test -no-color
+done
+
+step "infra safety (no provisioners, external/http, foreign providers or modules)"
+scripts/check-infra-safety.sh infra
+scripts/tests/check-infra-safety.test.sh
 
 step "tflint"
 if command -v tflint >/dev/null; then

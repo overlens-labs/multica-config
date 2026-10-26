@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadIam",
+      "Effect": "Allow",
+      "Action": [
+        "iam:Get*",
+        "iam:List*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageAgentsIam",
+      "Effect": "Allow",
+      "Action": "iam:*",
+      "Resource": [
+        "arn:aws:iam::437341204924:user/agents/agent-*",
+        "arn:aws:iam::437341204924:role/agents-dev",
+        "arn:aws:iam::437341204924:policy/agents-dev-access"
+      ]
+    },
+    {
+      "Sid": "ListStateBucket",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::overlens-terraform-state"
+    },
+    {
+      "Sid": "ReadWriteMainState",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::overlens-terraform-state/agents/*"
+    }
+  ]
+}

@@ -10,6 +10,7 @@
 #   - Infisical folders: `imports.agents.<agent>.folder_exists = true`.
 #   - Universal Auth client secrets and AWS access keys: their values can't be
 #     read back, so new ones are created and the old ones revoked by hand.
+#   - Repos of each agent's App installation: infra/app-installations/.
 
 locals {
   import_aws_users = toset([for a, cfg in var.imports.agents : a if cfg.iam_user && try(var.agents[a].aws, false)])
@@ -20,12 +21,6 @@ locals {
     for a, cfg in var.imports.agents : {
       for s in cfg.secrets : "${a}/${s}" => { agent = a, name = s }
     } if contains(keys(var.agents), a)
-  ]...)
-
-  import_repos = merge([
-    for a, cfg in var.agents : {
-      for r in cfg.github.repos : "${a}/${r}" => { agent = a, repo = r, installation_id = cfg.github.installation_id }
-    } if cfg.github != null && contains(keys(var.imports.agents), a)
   ]...)
 
   agents_path_prefix = trimsuffix(var.agents_credentials.path_prefix, "/")
@@ -101,11 +96,4 @@ import {
   for_each = local.import_aws_users
   to       = module.agent[each.key].aws_iam_user_policy.assume[0]
   id       = "${var.aws.user_prefix}${each.key}:assume-${var.aws.role_name}"
-}
-
-# Repos already selected on an adopted agent's installation.
-import {
-  for_each = local.import_repos
-  to       = module.agent[each.value.agent].github_app_installation_repository.this[each.value.repo]
-  id       = "${each.value.installation_id}:${each.value.repo}"
 }

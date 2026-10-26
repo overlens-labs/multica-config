@@ -76,7 +76,6 @@ variable "github" {
   type = object({
     app_slug        = string
     installation_id = number
-    repos           = list(string)
     bot_user_id     = optional(number)
   })
   default = null

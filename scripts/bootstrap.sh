@@ -16,6 +16,9 @@ Usage: $(basename "$0") --org <org> --region <aws-region> [--admin-arn <arn>]...
   --region     AWS region of the bucket and the key
   --admin-arn  IAM principal allowed to use the key (repeatable). Default: the
                caller's identity (an assumed-role session is mapped to its role).
+               The list REPLACES the key users: to add the pipeline roles, pass
+               your own ARN too, e.g. --admin-arn <you> --admin-arn <plan-role>
+               --admin-arn <apply-role> (infra/README.md, "Pipeline").
   --dry-run    print what would be created, change nothing
 USAGE
   exit "${1:-1}"
@@ -54,14 +57,18 @@ run() {
 
 caller="$(aws sts get-caller-identity --output json)"
 ACCOUNT_ID="$(jq -r .Account <<<"$caller")"
+caller_arn="$(jq -r .Arn <<<"$caller")"
+# arn:aws:sts::<acct>:assumed-role/<role>/<session> -> arn:aws:iam::<acct>:role/<role>
+# (SSO roles keep their path in IAM; pass --admin-arn explicitly in that case.)
+if [[ "$caller_arn" =~ ^arn:aws:sts::([0-9]+):assumed-role/([^/]+)/ ]]; then
+  caller_arn="arn:aws:iam::${BASH_REMATCH[1]}:role/${BASH_REMATCH[2]}"
+fi
 if (( ${#ADMIN_ARNS[@]} == 0 )); then
-  arn="$(jq -r .Arn <<<"$caller")"
-  # arn:aws:sts::<acct>:assumed-role/<role>/<session> -> arn:aws:iam::<acct>:role/<role>
-  # (SSO roles keep their path in IAM; pass --admin-arn explicitly in that case.)
-  if [[ "$arn" =~ ^arn:aws:sts::([0-9]+):assumed-role/([^/]+)/ ]]; then
-    arn="arn:aws:iam::${BASH_REMATCH[1]}:role/${BASH_REMATCH[2]}"
-  fi
-  ADMIN_ARNS=("$arn")
+  ADMIN_ARNS=("$caller_arn")
+elif [[ " ${ADMIN_ARNS[*]} " != *" $caller_arn "* ]]; then
+  # Not fatal (SSO role paths don't map 1:1), but usually a mistake: the
+  # caller stops being able to read the state after this run.
+  log "WARNING: the caller ($caller_arn) is not in --admin-arn; it will lose access to the state key"
 fi
 log "Account $ACCOUNT_ID, region $REGION, key users: ${ADMIN_ARNS[*]}"
 
